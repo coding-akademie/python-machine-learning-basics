@@ -32,14 +32,5 @@ def print_summary_result(index, results):
 
 
 def main():
-    args = parse_args()
-    if args.summary or args.number_of_rolls > 100:
-        results = [0] * args.number_of_sides
-        for i in range(args.number_of_rolls):
-            results[roll_die(args.number_of_sides) - 1] += 1
-        for i in range(args.number_of_sides):
-            print_summary_result(i, results)
-    else:
-        for i in range(args.number_of_rolls):
-            print_roll(args.number_of_sides)
+    print 'Number Game!'
 
