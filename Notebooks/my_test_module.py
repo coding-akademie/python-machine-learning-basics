@@ -15,3 +15,7 @@ def perform_complex_computation(n):
 
 print("File my_test_module.py is executing!")
 print(f"Module name is '{__name__}'")
+
+if __name__ == "__main__":
+    print("Running as main program")
+
