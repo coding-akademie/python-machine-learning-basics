@@ -1,0 +1,11 @@
+# Content
+jupyter
+jupyter-contrib-nbextensions  # nbtranslate
+papermill
+
+# Extended dependencies
+numpy
+scipy
+pandas
+matplotlib
+statsmodels
