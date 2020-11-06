@@ -3,6 +3,7 @@
 *.py[co]
 dist.zip
 df*.csv
+macrodata.csv
 
 .idea/
 __pycache__/
@@ -11,4 +12,6 @@ _build/
 .hypothesis
 venv/
 /Notebooks/*.run.ipynb
+/Notebooks/*_de.ipynb
+/Notebooks/*_en.ipynb
 /Notebooks/.ipynb_checkpoints/

@@ -22,9 +22,18 @@ pdf: $(PDFS)
 
 # Cannot use 'make' dependencies for single notebooks due to spaces in filenames. :-/
 notebooks:
-	@FAILED= ; ls $(NOTEBOOKSDIR)/*.ipynb | fgrep -v .run.ipynb | egrep -v '/(000|9|Generate)[^/]+[.]ipynb' | while read notebook ; do \
+	@FAILED= ; ls $(NOTEBOOKSDIR)/*.ipynb | fgrep -v .run.ipynb | egrep -v '/(000|9|Generate)[^/]+[.]ipynb$$' | egrep -v '_[a-z][a-z][.]ipynb$$' | while read notebook ; do \
+		echo "Processing notebook $${notebook} ..."; \
 		target="$${notebook%.ipynb}.run.ipynb"; \
-		[ -f "$$target" -a "$$target" -nt "$${notebook}" ] || $(PYBINDIR)/papermill "$${notebook}" "$${target}" || { rm -f "$${target}" ; FAILED="$${FAILED} $${notebook}" ;}; \
+		[ -f "$${target}" -a "$${target}" -nt "$${notebook}" ] || $(PYBINDIR)/papermill "$${notebook}" "$${target}" || { rm -f "$${target}" ; FAILED="$${FAILED} $${notebook}" ;}; \
+		for language in en de; do \
+			langnb="$${notebook%.ipynb}_$${language}.ipynb"; \
+			[ -f "$${langnb}" -a "$${langnb}" -nt "$${notebook}" ] \
+				|| $(PYBINDIR)/jupyter nbconvert --to selectLanguage --NotebookLangExporter.language=$${language} "$${notebook}" \
+				|| { rm -f "$${langnb}" ; FAILED="$${FAILED} $${notebook}" ;}; \
+			target="$${langnb%.ipynb}.run.ipynb"; \
+			[ -f "$${target}" -a "$${target}" -nt "$${langnb}" ] || $(PYBINDIR)/papermill "$${langnb}" "$${target}" || { rm -f "$${target}" ; FAILED="$${FAILED} $${langnb}" ;}; \
+		done; \
 	done; \
 	[ -z "$${FAILED}" ] || echo "Failed notebooks:$${FAILED}" | sed -e 's|$(NOTEBOOKSDIR)/||g'
 
