@@ -2,6 +2,7 @@ PY3VERSION := 8
 VENVDIR := $(PWD)/venv/py3$(PY3VERSION)
 PYBINDIR := $(VENVDIR)/bin
 PYTHON := $(VENVDIR)/bin/python3
+EXAMPLESDIR := Examples
 NOTEBOOKSDIR := Notebooks
 
 NOTEBOOKS := $(filter-out %.run.ipynb, $(shell ls $(NOTEBOOKSDIR)/*.ipynb | sed -e 's| |+|g' | grep -v 'Playground') )
@@ -12,30 +13,35 @@ RUN_NOTEBOOKS := $(patsubst %.ipynb, %.run.ipynb, $(NOTEBOOKS))
 
 all: dist notebooks
 
-dist: dist.zip
+dist: dist.zip dist.de.zip dist.en.zip
 
-dist.zip: notebooks Makefile
+dist.zip: notebooks Makefile $(wildcard $(EXAMPLESDIR)/*/)
 	@rm -f $@
-	@zip -9 $@ Makefile requirements.txt $(NOTEBOOKSDIR)/*.ipynb
+	@zip -r9 $@ Makefile requirements.txt $(EXAMPLESDIR) $(NOTEBOOKSDIR)/*.ipynb
+
+dist.%.zip: notebooks Makefile requirements.txt $(wildcard $(EXAMPLESDIR)/*/)
+	@rm -f $@
+	@zip -r9 $@ Makefile requirements.txt $(EXAMPLESDIR) $(NOTEBOOKSDIR)/*_$(subst dist.,,$(subst .zip,,$@)).*ipynb
 
 pdf: $(PDFS)
 
 # Cannot use 'make' dependencies for single notebooks due to spaces in filenames. :-/
 notebooks:
-	@FAILED= ; ls $(NOTEBOOKSDIR)/*.ipynb | fgrep -v .run.ipynb | egrep -v '/(000|9|Generate)[^/]+[.]ipynb$$' | egrep -v '_[a-z][a-z][.]ipynb$$' | while read notebook ; do \
+	@(cd $(NOTEBOOKSDIR) && ls *.ipynb | fgrep -v .run.ipynb | egrep -v '^(000|9|Generate)[^/]+[.]ipynb$$' | egrep -v '_[a-z][a-z][.]ipynb$$' | while read notebook ; do \
 		echo "Processing notebook $${notebook} ..."; \
 		target="$${notebook%.ipynb}.run.ipynb"; \
-		[ -f "$${target}" -a "$${target}" -nt "$${notebook}" ] || $(PYBINDIR)/papermill "$${notebook}" "$${target}" || { rm -f "$${target}" ; FAILED="$${FAILED} $${notebook}" ;}; \
+		{ [ -f "$${target}" -a "$${target}" -nt "$${notebook}" ] || $(PYBINDIR)/papermill --no-progress-bar "$${notebook}" "$${target}" || { rm -f "$${target}"; FAILED="$${FAILED} $${notebook}"; } & } ; \
 		for language in en de; do \
 			langnb="$${notebook%.ipynb}_$${language}.ipynb"; \
 			[ -f "$${langnb}" -a "$${langnb}" -nt "$${notebook}" ] \
 				|| $(PYBINDIR)/jupyter nbconvert --to selectLanguage --NotebookLangExporter.language=$${language} "$${notebook}" \
 				|| { rm -f "$${langnb}" ; FAILED="$${FAILED} $${notebook}" ;}; \
 			target="$${langnb%.ipynb}.run.ipynb"; \
-			[ -f "$${target}" -a "$${target}" -nt "$${langnb}" ] || $(PYBINDIR)/papermill "$${langnb}" "$${target}" || { rm -f "$${target}" ; FAILED="$${FAILED} $${langnb}" ;}; \
+			{ [ -f "$${target}" -a "$${target}" -nt "$${langnb}" ] || $(PYBINDIR)/papermill --no-progress-bar "$${langnb}" "$${target}" || { rm -f "$${target}"; FAILED="$${FAILED} $${notebook}"; } & } ; \
 		done; \
+		wait; \
 	done; \
-	[ -z "$${FAILED}" ] || echo "Failed notebooks:$${FAILED}" | sed -e 's|$(NOTEBOOKSDIR)/||g'
+	[ -z "$${FAILED}" ] || exit 1 )
 
 venv: $(PYBINDIR)
 
@@ -52,7 +58,7 @@ nbserve: $(PYBINDIR) Makefile
 	$(PYTHON) -m jupyter notebook --port=8888  # force port to avoid multiple starts
 
 clean:
-	rm -f *~ $(NOTEBOOKSDIR)/*.run.ipynb
+	rm -f *~ $(NOTEBOOKSDIR)/*.run.ipynb $(NOTEBOOKSDIR)/*_{de,en}.ipynb
 
 clean_venv:
 	rm -fr $(VENVDIR)
