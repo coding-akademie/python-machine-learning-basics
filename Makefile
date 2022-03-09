@@ -17,11 +17,11 @@ dist: dist.zip dist.de.zip dist.en.zip
 
 dist.zip: notebooks Makefile $(wildcard $(EXAMPLESDIR)/*/)
 	@rm -f $@
-	@zip -r9 $@ Makefile requirements.txt $(EXAMPLESDIR) $(NOTEBOOKSDIR)/*.ipynb
+	@zip -r9 $@ Makefile requirements.txt $(EXAMPLESDIR) $(NOTEBOOKSDIR)/*.ipynb $(NOTEBOOKSDIR)/img
 
 dist.%.zip: notebooks Makefile requirements.txt $(wildcard $(EXAMPLESDIR)/*/)
 	@rm -f $@
-	@zip -r9 $@ Makefile requirements.txt $(EXAMPLESDIR) $(NOTEBOOKSDIR)/*_$(subst dist.,,$(subst .zip,,$@)).*ipynb
+	@zip -r9 $@ Makefile requirements.txt $(EXAMPLESDIR) $(NOTEBOOKSDIR)/*_$(subst dist.,,$(subst .zip,,$@)).*ipynb $(NOTEBOOKSDIR)/img
 
 pdf: $(PDFS)
 
